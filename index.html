@@ -157,7 +157,7 @@ function renderChildren(){
 async function init(){
   _initSB();
   const[profs,auth]=await Promise.all([_sbGet('family_profiles'),_sbGet('parent_auth')]);
-  if(profs){localStorage.setItem('family_profiles',JSON.stringify(profs));}
+  if(profs && profs.length){localStorage.setItem('family_profiles',JSON.stringify(profs));}
   else{const lp=JSON.parse(localStorage.getItem('family_profiles')||'[]');if(lp.length)_sbSet('family_profiles',lp);}
   if(auth){localStorage.setItem('parent_auth',JSON.stringify(auth));}
   else{const la=JSON.parse(localStorage.getItem('parent_auth')||'null');if(la&&la.passwordHash)_sbSet('parent_auth',la);}
