@@ -999,7 +999,7 @@ function delNote(lessonId,idx){
 function renderWeek(){
   const tb=document.getElementById('week-tbody');
   const byDay={};let maxSlots=0;
-  for(let d=1;d<=5;d++){byDay[d]=(SCHED[d]||[]).filter(l=>l.tp!=='break').sort((a,b)=>a.s.localeCompare(b.s));if(byDay[d].length>maxSlots)maxSlots=byDay[d].length;}
+  for(let d=1;d<=5;d++){byDay[d]=(SCHED[d]||[]).filter(l=>l.tp!=='break').sort((a,b)=>toMins(a.s)-toMins(b.s));if(byDay[d].length>maxSlots)maxSlots=byDay[d].length;}
   if(maxSlots===0){tb.innerHTML='';return;}
   let ln=0;
   tb.innerHTML=Array.from({length:maxSlots},(_,i)=>{
@@ -1028,7 +1028,7 @@ function updateStats(){
 function renderWP(){
   const c=document.getElementById('wp-rows');
   const byDay={};let maxSlots=0;
-  for(let d=1;d<=5;d++){byDay[d]=(SCHED[d]||[]).filter(l=>l.tp!=='break').sort((a,b)=>a.s.localeCompare(b.s));if(byDay[d].length>maxSlots)maxSlots=byDay[d].length;}
+  for(let d=1;d<=5;d++){byDay[d]=(SCHED[d]||[]).filter(l=>l.tp!=='break').sort((a,b)=>toMins(a.s)-toMins(b.s));if(byDay[d].length>maxSlots)maxSlots=byDay[d].length;}
   if(maxSlots===0){c.innerHTML='';return;}
   let ln=0;
   c.innerHTML=Array.from({length:maxSlots},(_,i)=>{
