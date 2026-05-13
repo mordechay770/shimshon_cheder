@@ -281,7 +281,7 @@ const _SB_URL='https://ubwjsshbyglmfnjndmyt.supabase.co';
 const _SB_KEY='sb_publishable_XmO4XsnEfX4c_g_kcQQcPQ_reGqNzOr';
 const _FAM_ID='00000000-0000-0000-0000-000000000001';
 let _SB=null;
-function _initSB(){if(typeof createClient!=='undefined')_SB=createClient(_SB_URL,_SB_KEY);}
+function _initSB(){if(typeof supabase!=='undefined')_SB=supabase.createClient(_SB_URL,_SB_KEY);}
 function _sbSet(key,value){
   if(!_SB)return;
   _SB.from('kv_store').upsert({parent_id:_FAM_ID,child_id:'__family__',key,value,updated_at:new Date().toISOString()}).then(()=>{}).catch(()=>{});
@@ -579,7 +579,7 @@ let SB=null;
 function initSupabase(){
   const url=localStorage.getItem('supabase_url');
   const key=localStorage.getItem('supabase_key');
-  if(url&&key&&typeof createClient!=='undefined'){SB=createClient(url,key);return true;}
+  if(url&&key&&typeof supabase!=='undefined'){SB=supabase.createClient(url,key);return true;}
   return false;
 }
 function initCloudTab(){

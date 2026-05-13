@@ -683,7 +683,7 @@ let SB=null;
 function initSupabase(){
   const url='https://ubwjsshbyglmfnjndmyt.supabase.co';
   const key='sb_publishable_XmO4XsnEfX4c_g_kcQQcPQ_reGqNzOr';
-  if(typeof createClient!=='undefined')SB=createClient(url,key);
+  if(typeof supabase!=='undefined')SB=supabase.createClient(url,key);
 }
 async function syncSave(key,value){
   localStorage.setItem((USER_ID||'shimshon')+'_'+key,JSON.stringify(value));

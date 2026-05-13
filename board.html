@@ -114,7 +114,7 @@ const _SB_URL='https://ubwjsshbyglmfnjndmyt.supabase.co';
 const _SB_KEY='sb_publishable_XmO4XsnEfX4c_g_kcQQcPQ_reGqNzOr';
 const _FAM_ID='00000000-0000-0000-0000-000000000001';
 let _SB=null;
-function _initSB(){if(typeof createClient!=='undefined')_SB=createClient(_SB_URL,_SB_KEY);}
+function _initSB(){if(typeof supabase!=='undefined')_SB=supabase.createClient(_SB_URL,_SB_KEY);}
 async function _sbGet(key){
   if(!_SB)return null;
   try{const{data}=await _SB.from('kv_store').select('value').eq('parent_id',_FAM_ID).eq('child_id','__family__').eq('key',key).single();return data?data.value:null;}
