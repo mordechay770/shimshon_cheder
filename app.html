@@ -642,14 +642,26 @@ async function doLogin(){
   let profiles=getProfiles();
   let p=profiles.find(x=>x.id===USER_ID);
   if(!p)return;
+  const hashed=await hashPassword(pw);
+  // try to get hash from Supabase first
+  const remoteHash=await syncLoad('passwordHash');
+  if(remoteHash){
+    if(hashed===remoteHash){PROFILE=p;startSession();}
+    else{document.getElementById('login-error').style.display='block';}
+    return;
+  }
+  // fallback to local hash
   if(!p.passwordHash){
-    p.passwordHash=await hashPassword(pw);
+    p.passwordHash=hashed;
     saveProfiles(profiles);
+    syncSave('passwordHash',hashed);
     PROFILE=p;
     startSession();return;
   }
-  const hashed=await hashPassword(pw);
-  if(hashed===p.passwordHash){PROFILE=p;startSession();}
+  if(hashed===p.passwordHash){
+    syncSave('passwordHash',hashed);
+    PROFILE=p;startSession();
+  }
   else{document.getElementById('login-error').style.display='block';}
 }
 function logout(){
@@ -666,25 +678,28 @@ function updateLoginUI(){
 // ══════════════════════════════════════════════════
 // SUPABASE SYNC
 // ══════════════════════════════════════════════════
+const FAMILY_ID='00000000-0000-0000-0000-000000000001';
 let SB=null;
 function initSupabase(){
-  const url=localStorage.getItem('supabase_url');
-  const key=localStorage.getItem('supabase_key');
-  if(url&&key&&typeof createClient!=='undefined')SB=createClient(url,key);
-}
-async function sbSession(){
-  if(!SB)return null;
-  try{const{data:{session}}=await SB.auth.getSession();return session;}catch(e){return null;}
+  const url='https://ubwjsshbyglmfnjndmyt.supabase.co';
+  const key='sb_publishable_XmO4XsnEfX4c_g_kcQQcPQ_reGqNzOr';
+  if(typeof createClient!=='undefined')SB=createClient(url,key);
 }
 async function syncSave(key,value){
-  localStorage.setItem(USER_ID+'_'+key,JSON.stringify(value));
-  const sess=await sbSession();
-  if(sess){
-    SB.from('kv_store').upsert({
-      parent_id:sess.user.id,child_id:USER_ID,key,value,
-      updated_at:new Date().toISOString()
-    }).then(()=>{}).catch(()=>{});
-  }
+  localStorage.setItem((USER_ID||'shimshon')+'_'+key,JSON.stringify(value));
+  if(!SB)return;
+  SB.from('kv_store').upsert({
+    parent_id:FAMILY_ID,child_id:USER_ID||'shimshon',key,value,
+    updated_at:new Date().toISOString()
+  }).then(()=>{}).catch(()=>{});
+}
+async function syncLoad(key){
+  if(!SB)return null;
+  try{
+    const{data}=await SB.from('kv_store').select('value')
+      .eq('parent_id',FAMILY_ID).eq('child_id',USER_ID||'shimshon').eq('key',key).single();
+    return data?data.value:null;
+  }catch(e){return null;}
 }
 
 // ══════════════════════════════════════════════════
