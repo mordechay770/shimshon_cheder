@@ -1391,7 +1391,26 @@ function handleProfilePhoto(input){
 // ══════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════
-function initApp(){
+async function initApp(){
+  // Load data from Supabase if local cache is empty (new device)
+  const [remoteST,remoteEC,remoteSched]=await Promise.all([syncLoad('data'),syncLoad('email'),syncLoad('sched_'+(USER_ID||'shimshon'))]);
+  if(remoteST&&(!ST.lessons||Object.keys(ST.lessons).length===0)){
+    Object.assign(ST,remoteST);
+    if(!ST.lessons)ST.lessons={};
+    if(!ST.materials)ST.materials=[];
+    if(!ST.reminders)ST.reminders=[];
+    if(!ST.camp)ST.camp={log:[],tickedDates:[]};
+    localStorage.setItem(DATA_KEY,JSON.stringify(ST));
+  }
+  if(remoteEC&&remoteEC.pk&&!EC.pk){
+    Object.assign(EC,remoteEC);
+    localStorage.setItem(EMAIL_KEY,JSON.stringify(EC));
+  }
+  if(remoteSched&&!localStorage.getItem(SCHED_KEY)){
+    localStorage.setItem(SCHED_KEY,JSON.stringify(remoteSched));
+    Object.keys(SCHED_LIVE).forEach(k=>delete SCHED_LIVE[k]);
+    Object.assign(SCHED_LIVE,remoteSched);
+  }
   updateHeaderProfile();
   tick();setInterval(tick,1000);
   populateLessonSelects();

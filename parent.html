@@ -276,9 +276,27 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('on'),2500);
 }
 
+// ── FAMILY SUPABASE (hardcoded — for profiles sync) ──
+const _SB_URL='https://ubwjsshbyglmfnjndmyt.supabase.co';
+const _SB_KEY='sb_publishable_XmO4XsnEfX4c_g_kcQQcPQ_reGqNzOr';
+const _FAM_ID='00000000-0000-0000-0000-000000000001';
+let _SB=null;
+function _initSB(){if(typeof createClient!=='undefined')_SB=createClient(_SB_URL,_SB_KEY);}
+function _sbSet(key,value){
+  if(!_SB)return;
+  _SB.from('kv_store').upsert({parent_id:_FAM_ID,child_id:'__family__',key,value,updated_at:new Date().toISOString()}).then(()=>{}).catch(()=>{});
+}
+function _sbSetChild(childId,key,value){
+  if(!_SB)return;
+  _SB.from('kv_store').upsert({parent_id:_FAM_ID,child_id:childId,key,value,updated_at:new Date().toISOString()}).then(()=>{}).catch(()=>{});
+}
+_initSB();
+// Migrate existing profiles to Supabase on first load
+(function(){const p=JSON.parse(localStorage.getItem('family_profiles')||'[]');if(p.length)_sbSet('family_profiles',p);})();
+
 // ── PROFILES ──
 function getProfiles(){return JSON.parse(localStorage.getItem('family_profiles')||'[]');}
-function saveProfiles(p){localStorage.setItem('family_profiles',JSON.stringify(p));}
+function saveProfiles(p){localStorage.setItem('family_profiles',JSON.stringify(p));_sbSet('family_profiles',p);}
 
 async function hashPassword(pw){
   const enc=new TextEncoder();
@@ -510,6 +528,7 @@ function saveLesson(){
   if(editingLesson!==null){sched[day][editingLesson]=entry;}
   else{sched[day].push(entry);sched[day].sort((a,b)=>a.s.localeCompare(b.s));}
   localStorage.setItem('sched_'+currentSchedChild,JSON.stringify(sched));
+  _sbSetChild(currentSchedChild,'sched_'+currentSchedChild,sched);
   closeLessonModal();loadSchedEditor();showToast('✅ שיעור נשמר!');
 }
 function deleteLesson(day,idx){
@@ -517,6 +536,7 @@ function deleteLesson(day,idx){
   const sched=JSON.parse(localStorage.getItem('sched_'+currentSchedChild)||'{}');
   if(sched[day])sched[day].splice(idx,1);
   localStorage.setItem('sched_'+currentSchedChild,JSON.stringify(sched));
+  _sbSetChild(currentSchedChild,'sched_'+currentSchedChild,sched);
   loadSchedEditor();showToast('🗑️ נמחק');
 }
 

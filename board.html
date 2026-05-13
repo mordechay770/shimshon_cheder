@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>לוח המשפחה</title>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{
   --gold:#C8920A;--gold-lt:#F5D060;--gold-pale:#FDF3D0;
@@ -108,6 +109,22 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);}
 </div>
 
 <script>
+// ── SUPABASE ──
+const _SB_URL='https://ubwjsshbyglmfnjndmyt.supabase.co';
+const _SB_KEY='sb_publishable_XmO4XsnEfX4c_g_kcQQcPQ_reGqNzOr';
+const _FAM_ID='00000000-0000-0000-0000-000000000001';
+let _SB=null;
+function _initSB(){if(typeof createClient!=='undefined')_SB=createClient(_SB_URL,_SB_KEY);}
+async function _sbGet(key){
+  if(!_SB)return null;
+  try{const{data}=await _SB.from('kv_store').select('value').eq('parent_id',_FAM_ID).eq('child_id','__family__').eq('key',key).single();return data?data.value:null;}
+  catch(e){return null;}
+}
+function _sbSet(key,value){
+  if(!_SB)return;
+  _SB.from('kv_store').upsert({parent_id:_FAM_ID,child_id:'__family__',key,value,updated_at:new Date().toISOString()}).then(()=>{}).catch(()=>{});
+}
+
 // ── AUTH ──
 function isParent(){
   const s=JSON.parse(localStorage.getItem('parent_session')||'null');
@@ -125,7 +142,7 @@ if(canPost)document.getElementById('fab').classList.add('show');
 
 // ── BOARD DATA ──
 function getPosts(){return JSON.parse(localStorage.getItem('family_board')||'[]');}
-function savePosts(p){localStorage.setItem('family_board',JSON.stringify(p));}
+function savePosts(p){localStorage.setItem('family_board',JSON.stringify(p));_sbSet('family_board',p);}
 
 const TYPE_META={
   announcement:{lbl:'📢 הודעה',cls:'type-ann',icon:'📢'},
@@ -156,7 +173,12 @@ function renderPosts(){
     </div>`;
   }).join('');
 }
+_initSB();
 renderPosts();
+_sbGet('family_board').then(remote=>{
+  if(remote){localStorage.setItem('family_board',JSON.stringify(remote));renderPosts();}
+  else{const lb=JSON.parse(localStorage.getItem('family_board')||'[]');if(lb.length)_sbSet('family_board',lb);}
+});
 
 // ── POST CREATION ──
 let selectedType='announcement';
