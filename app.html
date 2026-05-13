@@ -998,10 +998,14 @@ function delNote(lessonId,idx){
 // ══════════════════════════════════════════════════
 function renderWeek(){
   const tb=document.getElementById('week-tbody');
-  const slots=[{s:'9:00',e:'9:45'},{s:'9:45',e:'10:00',b:1},{s:'10:00',e:'10:45'},{s:'10:45',e:'11:00',b:1},{s:'11:00',e:'11:45'},{s:'11:45',e:'12:15',b:1},{s:'12:15',e:'13:00'},{s:'13:00',e:'13:15',b:1},{s:'13:15',e:'14:00'}];
-  tb.innerHTML=slots.map(sl=>{
-    if(sl.b)return`<tr class="brkr"><td class="wtc">${dispTime(sl.s)}</td><td colspan="5">☕ הפסקה</td></tr>`;
-    return`<tr><td class="wtc">${dispTime(sl.s)}–${dispTime(sl.e)}</td>${[1,2,3,4,5].map(d=>{const l=(SCHED[d]||[]).find(x=>x.s===sl.s&&x.tp!=='break');return l?`<td><div class="wsubj">${l.tp==='prayer'?'🙏 ':''}${l.sub}</div>${l.tch?`<div class="wtch">${l.tch}</div>`:''}</td>`:'<td style="color:#ddd;">—</td>';}).join('')}</tr>`;
+  const byDay={};let maxSlots=0;
+  for(let d=1;d<=5;d++){byDay[d]=(SCHED[d]||[]).filter(l=>l.tp!=='break').sort((a,b)=>a.s.localeCompare(b.s));if(byDay[d].length>maxSlots)maxSlots=byDay[d].length;}
+  if(maxSlots===0){tb.innerHTML='';return;}
+  let ln=0;
+  tb.innerHTML=Array.from({length:maxSlots},(_,i)=>{
+    const prayer=[1,2,3,4,5].some(d=>byDay[d][i]&&byDay[d][i].tp==='prayer');
+    const lbl=prayer?'🙏':`${++ln}`;
+    return`<tr><td class="wtc">${lbl}</td>${[1,2,3,4,5].map(d=>{const l=byDay[d][i];return l?`<td><div class="wsubj">${l.sub}</div>${l.tch?`<div class="wtch">${l.tch}</div>`:''}<div class="wtch">${dispTime(l.s)}</div></td>`:'<td style="color:#ddd;">—</td>';}).join('')}</tr>`;
   }).join('');
 }
 
@@ -1023,26 +1027,22 @@ function updateStats(){
 }
 function renderWP(){
   const c=document.getElementById('wp-rows');
-  const slots=[
-    {label:'🙏 תפילה', time:'9:00'},
-    {label:'שיעור 1',   time:'10:00'},
-    {label:'שיעור 2',   time:'11:00'},
-    {label:'שיעור 3',   time:'12:15'},
-    {label:'שיעור 4',   time:'13:15'},
-  ];
-  c.innerHTML=slots.map(sl=>`<div class="wpr-row"><div class="wps">${sl.label}</div>${[1,2,3,4,5].map(d=>{
-    const l=(SCHED[d]||[]).find(x=>x.s===sl.time&&x.tp!=='break');
-    if(!l)return'<div class="wpc"></div>';
-    const ls=ST.lessons[l.id]||{};
-    const a=ls.att||0;
-    const ic=[];
-    if(a>=1)ic.push('✅');
-    if(a>=2)ic.push('⏱️');
-    if(a>=3)ic.push('📖');
-    if(ls.hw)ic.push('✏️');
-    const cl=ic.length>=4?'d3':ic.length>=2?'d2':ic.length>=1?'d1':'';
-    return`<div class="wpc ${cl}">${ic.join('')}</div>`;
-  }).join('')}</div>`).join('');
+  const byDay={};let maxSlots=0;
+  for(let d=1;d<=5;d++){byDay[d]=(SCHED[d]||[]).filter(l=>l.tp!=='break').sort((a,b)=>a.s.localeCompare(b.s));if(byDay[d].length>maxSlots)maxSlots=byDay[d].length;}
+  if(maxSlots===0){c.innerHTML='';return;}
+  let ln=0;
+  c.innerHTML=Array.from({length:maxSlots},(_,i)=>{
+    const prayer=[1,2,3,4,5].some(d=>byDay[d][i]&&byDay[d][i].tp==='prayer');
+    const lbl=prayer?'🙏 תפילה':`שיעור ${++ln}`;
+    return`<div class="wpr-row"><div class="wps">${lbl}</div>${[1,2,3,4,5].map(d=>{
+      const l=byDay[d][i];
+      if(!l)return'<div class="wpc"></div>';
+      const ls=ST.lessons[l.id]||{};const a=ls.att||0;const ic=[];
+      if(a>=1)ic.push('✅');if(a>=2)ic.push('⏱️');if(a>=3)ic.push('📖');if(ls.hw)ic.push('✏️');
+      const cl=ic.length>=4?'d3':ic.length>=2?'d2':ic.length>=1?'d1':'';
+      return`<div class="wpc ${cl}">${ic.join('')}</div>`;
+    }).join('')}</div>`;
+  }).join('');
 }
 
 // ══════════════════════════════════════════════════
