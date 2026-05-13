@@ -1331,12 +1331,17 @@ async function sendLessonRem(lessonId,lessonName){
 // ══════════════════════════════════════════════════
 function showModal(icon,title,msg){document.getElementById('m-icon').textContent=icon;document.getElementById('m-title').textContent=title;document.getElementById('m-msg').textContent=msg;document.getElementById('modal').classList.add('on');}
 
+function reloadSched(){
+  try{const fresh=JSON.parse(localStorage.getItem(SCHED_KEY));if(fresh){Object.keys(SCHED).forEach(k=>delete SCHED[k]);Object.assign(SCHED,fresh);}}catch(e){}
+}
 function go(tab){
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nt').forEach(t=>t.classList.remove('on'));
   document.getElementById('pg-'+tab).classList.add('on');
   const idx={today:0,week:1,progress:2,notes:3,materials:4,reminders:5,camp:6};
   document.querySelectorAll('.nt')[idx[tab]].classList.add('on');
+  if(tab==='today'){reloadSched();renderToday();}
+  if(tab==='week'){reloadSched();renderWeek();}
   if(tab==='progress')updateStats();
   if(tab==='notes')renderAllNotes();
   if(tab==='materials')renderMats();
@@ -1406,10 +1411,10 @@ async function initApp(){
     Object.assign(EC,remoteEC);
     localStorage.setItem(EMAIL_KEY,JSON.stringify(EC));
   }
-  if(remoteSched&&!localStorage.getItem(SCHED_KEY)){
+  if(remoteSched){
     localStorage.setItem(SCHED_KEY,JSON.stringify(remoteSched));
-    Object.keys(SCHED_LIVE).forEach(k=>delete SCHED_LIVE[k]);
-    Object.assign(SCHED_LIVE,remoteSched);
+    Object.keys(SCHED).forEach(k=>delete SCHED[k]);
+    Object.assign(SCHED,remoteSched);
   }
   updateHeaderProfile();
   tick();setInterval(tick,1000);
