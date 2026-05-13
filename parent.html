@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>דשבורד הורים</title>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --gold:#C8920A;--gold-lt:#F5D060;--gold-pale:#FDF3D0;
+  --navy:#1A2744;--navy-mid:#2C3E6B;--navy-lt:#3D5495;
+  --cream:#FBF7EE;--red:#C41230;--green:#1A7A4A;
+  --border:rgba(200,146,10,0.22);--shadow:0 2px 12px rgba(26,39,68,0.09);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--navy);direction:rtl;min-height:100vh;}
+.hdr{background:linear-gradient(135deg,#111e38,var(--navy-mid));color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;}
+.hdr h1{font-family:'Frank Ruhl Libre',serif;font-size:22px;font-weight:900;}
+.hdr-btns{display:flex;gap:10px;}
+.hdr-btn{padding:7px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font-family:'Heebo',sans-serif;font-size:13px;cursor:pointer;transition:all .14s;}
+.hdr-btn:hover{background:rgba(255,255,255,.15);}
+.hdr-btn.gold{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:700;}
+
+.tabs{display:flex;background:#fff;border-bottom:2px solid var(--border);padding:0 24px;gap:2px;overflow-x:auto;}
+.tab{padding:12px 16px;font-size:13px;font-weight:500;color:var(--navy-mid);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .18s;}
+.tab:hover{color:var(--gold);}
+.tab.on{color:var(--gold);border-bottom-color:var(--gold);font-weight:700;}
+
+.pg{display:none;max-width:960px;margin:0 auto;padding:24px 20px;}
+.pg.on{display:block;}
+
+/* profile cards */
+.profile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:20px;}
+.pcard{background:#fff;border-radius:14px;border:1.5px solid var(--border);padding:16px;text-align:center;position:relative;}
+.pcard-avatar{font-size:40px;margin-bottom:6px;}
+.pcard-name{font-family:'Frank Ruhl Libre',serif;font-size:16px;font-weight:700;color:var(--navy);}
+.pcard-meta{font-size:11px;color:#aaa;margin-top:3px;line-height:1.5;}
+.pcard-actions{display:flex;gap:6px;justify-content:center;margin-top:10px;}
+.pcard-bar{position:absolute;bottom:0;left:0;right:0;height:4px;border-radius:0 0 13px 13px;}
+
+/* form */
+.form-box{background:#fff;border-radius:14px;border:1.5px solid var(--border);padding:20px;margin-bottom:20px;}
+.form-box h3{font-family:'Frank Ruhl Libre',serif;font-size:17px;color:var(--navy);margin-bottom:16px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.form-row.single{grid-template-columns:1fr;}
+label{font-size:12px;color:var(--navy-mid);display:block;margin-bottom:3px;}
+input[type=text],input[type=password],input[type=date],input[type=email],input[type=number],select{width:100%;border:1.5px solid #ddd;border-radius:8px;padding:8px 11px;font-family:'Heebo',sans-serif;font-size:13px;direction:rtl;color:var(--navy);}
+input:focus,select:focus{outline:none;border-color:var(--gold);}
+
+/* buttons */
+.btn{padding:8px 18px;border-radius:8px;border:none;font-family:'Heebo',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .14s;}
+.btn.primary{background:var(--navy);color:#fff;}
+.btn.primary:hover{background:var(--gold);}
+.btn.danger{background:transparent;color:var(--red);border:1.5px solid var(--red);}
+.btn.danger:hover{background:var(--red);color:#fff;}
+.btn.ghost{background:transparent;color:#aaa;border:1.5px solid #ddd;}
+.btn.ghost:hover{border-color:var(--red);color:var(--red);}
+.btn.sm{padding:5px 12px;font-size:12px;}
+
+/* attendance table */
+.att-table{width:100%;border-collapse:collapse;background:#fff;border-radius:13px;overflow:hidden;border:1.5px solid var(--border);}
+.att-table th{background:var(--navy);color:#fff;padding:10px 8px;font-size:13px;text-align:center;}
+.att-table td{padding:10px 8px;font-size:13px;text-align:center;border-bottom:1px solid var(--border);}
+.att-table tr:last-child td{border-bottom:none;}
+.att-table tr:hover td{background:var(--gold-pale);}
+.att-name{font-weight:700;font-family:'Frank Ruhl Libre',serif;text-align:right;padding-right:14px!important;}
+.att-num{font-weight:700;color:var(--navy-mid);}
+
+/* schedule editor */
+.sched-lesson{background:#fff;border-radius:10px;border:1.5px solid var(--border);padding:12px 14px;margin-bottom:8px;display:grid;grid-template-columns:auto 1fr auto auto auto auto auto;gap:8px;align-items:center;}
+.sched-lesson input{margin:0;}
+.lesson-type{font-size:11px;padding:3px 8px;border-radius:20px;}
+.lesson-type.prayer{background:#FFF0F0;color:var(--red);border:1px solid rgba(196,18,48,.2);}
+.lesson-type.lesson{background:#F0F4FF;color:var(--navy-mid);border:1px solid rgba(44,62,107,.2);}
+.lesson-type.break{background:#f5f5f5;color:#aaa;border:1px solid #eee;}
+
+/* supabase section */
+.cloud-box{background:linear-gradient(135deg,#e8f4fd,#f0f8ff);border:1.5px solid #90CAF9;border-radius:13px;padding:18px;margin-bottom:20px;}
+.cloud-status{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+.dot.green{background:var(--green);}
+.dot.red{background:var(--red);}
+.dot.gray{background:#bbb;}
+
+/* modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(26,39,68,.65);z-index:500;align-items:center;justify-content:center;}
+.modal-bg.on{display:flex;}
+.mbox{background:#fff;border-radius:18px;padding:26px;max-width:500px;width:94%;box-shadow:0 18px 55px rgba(0,0,0,.28);max-height:90vh;overflow-y:auto;}
+.mbox h3{font-family:'Frank Ruhl Libre',serif;font-size:19px;color:var(--navy);margin-bottom:16px;}
+
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 22px;border-radius:50px;font-size:13px;font-weight:600;z-index:900;opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.on{opacity:1;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>🎓 דשבורד הורים</h1>
+  <div class="hdr-btns">
+    <button class="hdr-btn" onclick="location.href='index.html'">← בית</button>
+    <button class="hdr-btn" onclick="location.href='board.html'">📋 לוח</button>
+    <button class="hdr-btn" onclick="doLogout()">🚪 יציאה</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab on" onclick="goTab('children')">👨‍👩‍👧‍👦 ילדים</div>
+  <div class="tab" onclick="goTab('attendance')">📊 נוכחות</div>
+  <div class="tab" onclick="goTab('schedules')">🗓 מערכות שעות</div>
+  <div class="tab" onclick="goTab('camp')">⛺ קאמפ</div>
+  <div class="tab" onclick="goTab('cloud')">☁️ ענן</div>
+</div>
+
+<!-- ── TAB: CHILDREN ── -->
+<div id="tab-children" class="pg on">
+  <div class="profile-grid" id="profile-grid"></div>
+  <button class="btn primary" onclick="openAddChild()">+ הוסף ילד</button>
+</div>
+
+<!-- ── TAB: ATTENDANCE ── -->
+<div id="tab-attendance" class="pg">
+  <div style="overflow-x:auto;">
+    <table class="att-table" id="att-table">
+      <thead><tr><th>ילד</th><th>✅ הגיע</th><th>⏱️ בזמן</th><th>📖 שלם</th><th>✏️ שיעורי בית</th><th>סה"כ</th></tr></thead>
+      <tbody id="att-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── TAB: SCHEDULES ── -->
+<div id="tab-schedules" class="pg">
+  <div class="form-box" style="margin-bottom:16px;">
+    <label>בחר ילד לעריכת מערכת שעות:</label>
+    <select id="sched-child-sel" onchange="loadSchedEditor()"></select>
+  </div>
+  <div id="sched-editor"></div>
+</div>
+
+<!-- ── TAB: CAMP ── -->
+<div id="tab-camp" class="pg">
+  <div id="camp-settings"></div>
+</div>
+
+<!-- ── TAB: CLOUD ── -->
+<div id="tab-cloud" class="pg">
+  <div class="cloud-box">
+    <div class="cloud-status">
+      <span class="dot" id="cloud-dot" style="background:#bbb;"></span>
+      <span id="cloud-status-txt">בודק חיבור...</span>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:#666;line-height:1.8;">
+      Supabase שומר את כל הנתונים בענן — נוכחות, הערות, קאמפ, מערכות שעות.<br>
+      הנתונים מסונכרנים בין כל המכשירים אוטומטית.
+    </div>
+  </div>
+  <div class="form-box">
+    <h3>הגדרות חיבור Supabase</h3>
+    <div class="form-row single">
+      <div><label>Project URL</label><input type="text" id="sb-url" placeholder="https://xxxx.supabase.co"></div>
+    </div>
+    <div class="form-row single">
+      <div><label>Anon Public Key</label><input type="text" id="sb-key" placeholder="eyJ..."></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button class="btn primary" onclick="saveSbConfig()">שמור והתחבר</button>
+      <button class="btn ghost" onclick="testSbConnection()">בדוק חיבור</button>
+    </div>
+  </div>
+  <div class="form-box">
+    <h3>התחברות ל-Supabase (הורה)</h3>
+    <div class="form-row">
+      <div><label>אימייל</label><input type="email" id="sb-email" placeholder="your@email.com"></div>
+      <div><label>סיסמה</label><input type="password" id="sb-pass" placeholder="סיסמה..."></div>
+    </div>
+    <button class="btn primary" onclick="sbLogin()">כניסה לחשבון ענן</button>
+    <div id="sb-user-info" style="margin-top:10px;font-size:12px;color:var(--green);display:none;"></div>
+  </div>
+</div>
+
+<!-- ── ADD/EDIT CHILD MODAL ── -->
+<div class="modal-bg" id="child-modal">
+  <div class="mbox">
+    <h3 id="child-modal-title">➕ הוסף ילד חדש</h3>
+    <input type="hidden" id="edit-child-id">
+    <div class="form-row">
+      <div><label>שם מלא</label><input type="text" id="cf-name" placeholder="שם משפחה"></div>
+      <div><label>שם משתמש (לURL)</label><input type="text" id="cf-username" placeholder="shimshon (אותיות לועזיות)"></div>
+    </div>
+    <div class="form-row">
+      <div><label>סיסמה</label><input type="password" id="cf-password" placeholder="השאר ריק לשמור קיים"></div>
+      <div><label>אמוג'י / אווטאר</label><input type="text" id="cf-emoji" placeholder="🧒"></div>
+    </div>
+    <div class="form-row">
+      <div><label>בית ספר</label><input type="text" id="cf-school" placeholder="חיידר נט..."></div>
+      <div><label>כיתה</label><input type="text" id="cf-class" placeholder="כיתה ג-ד"></div>
+    </div>
+    <div class="form-row">
+      <div><label>הפרש שעות מישראל</label><input type="number" id="cf-tz" placeholder="2" min="-12" max="12"></div>
+      <div><label>צבע כרטיס</label><input type="text" id="cf-color" placeholder="#C8920A"></div>
+    </div>
+    <div class="form-row single">
+      <div><label>קישור לאתר בית הספר (אופציונלי)</label><input type="text" id="cf-school-url" placeholder="https://..."></div>
+    </div>
+    <div class="form-row single">
+      <div>
+        <label>תמונת פרופיל</label>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:4px;">
+          <div id="cf-photo-preview" style="width:60px;height:60px;border-radius:50%;border:2px solid var(--border);background:#f5f5f5;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:28px;">🧒</div>
+          <div>
+            <input type="file" id="cf-photo-input" accept="image/*" onchange="handlePhotoUpload(this)" style="display:none;">
+            <button type="button" class="btn ghost" style="font-size:12px;" onclick="document.getElementById('cf-photo-input').click()">📷 העלה תמונה</button>
+            <button type="button" class="btn ghost" style="font-size:12px;margin-top:4px;" onclick="clearPhoto()">✕ הסר</button>
+          </div>
+        </div>
+        <input type="hidden" id="cf-photo-data">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="btn ghost" onclick="closeChildModal()">ביטול</button>
+      <button class="btn primary" onclick="saveChild()">שמור ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD LESSON MODAL ── -->
+<div class="modal-bg" id="lesson-modal">
+  <div class="mbox">
+    <h3 id="lesson-modal-title">+ הוסף שיעור</h3>
+    <input type="hidden" id="lm-day">
+    <input type="hidden" id="lm-lid">
+    <div class="form-row">
+      <div><label>נושא / שם</label><input type="text" id="lm-sub" placeholder="חומש, תפילה..."></div>
+      <div><label>מורה (אופציונלי)</label><input type="text" id="lm-tch" placeholder="הר׳ ..."></div>
+    </div>
+    <div class="form-row">
+      <div><label>שעת התחלה</label><input type="time" id="lm-start" value="09:00"></div>
+      <div><label>שעת סיום</label><input type="time" id="lm-end" value="09:45"></div>
+    </div>
+    <div class="form-row single">
+      <div><label>סוג</label>
+        <select id="lm-type">
+          <option value="lesson">📖 שיעור</option>
+          <option value="prayer">🙏 תפילה</option>
+          <option value="break">☕ הפסקה</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="btn ghost" onclick="closeLessonModal()">ביטול</button>
+      <button class="btn primary" onclick="saveLesson()">שמור ✓</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── AUTH CHECK ──
+function checkParentSession(){
+  const s=JSON.parse(localStorage.getItem('parent_session')||'null');
+  return s&&new Date(s.expires)>new Date();
+}
+if(!checkParentSession()){location.replace('index.html');}
+
+function doLogout(){
+  localStorage.removeItem('parent_session');
+  location.href='index.html';
+}
+
+// ── TOAST ──
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),2500);
+}
+
+// ── PROFILES ──
+function getProfiles(){return JSON.parse(localStorage.getItem('family_profiles')||'[]');}
+function saveProfiles(p){localStorage.setItem('family_profiles',JSON.stringify(p));}
+
+async function hashPassword(pw){
+  const enc=new TextEncoder();
+  const buf=await crypto.subtle.digest('SHA-256',enc.encode(pw+'family-salt-2026'));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+const DN_SHORT=['א','ב','ג','ד','ה','ו'];
+const DN_FULL=['שני','שלישי','רביעי','חמישי','שישי'];
+
+// ─── TAB NAVIGATION ───
+function goTab(name){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('tab-'+name).classList.add('on');
+  const tabs={children:0,attendance:1,schedules:2,camp:3,cloud:4};
+  document.querySelectorAll('.tab')[tabs[name]].classList.add('on');
+  if(name==='children')renderProfiles();
+  if(name==='attendance')renderAttendance();
+  if(name==='schedules')renderSchedTab();
+  if(name==='camp')renderCampTab();
+  if(name==='cloud')initCloudTab();
+}
+
+// ─── CHILDREN TAB ───
+function renderProfiles(){
+  const profiles=getProfiles();
+  const grid=document.getElementById('profile-grid');
+  if(!profiles.length){grid.innerHTML='<p style="color:#aaa;font-size:14px;">אין עדיין ילדים.</p>';return;}
+  grid.innerHTML=profiles.map(p=>`
+    <div class="pcard">
+      <div class="pcard-avatar">${p.photoData?`<img src="${p.photoData}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">`:p.avatarEmoji||'🧒'}</div>
+      <div class="pcard-name">${p.name}</div>
+      <div class="pcard-meta">${p.school||''}<br>${p.className||''}</div>
+      <div class="pcard-actions">
+        <button class="btn sm ghost" onclick="openEditChild('${p.id}')">✏️ ערוך</button>
+        <button class="btn sm danger" onclick="deleteChild('${p.id}')">✕</button>
+      </div>
+      <div class="pcard-bar" style="background:${p.color||'#C8920A'};"></div>
+    </div>`).join('');
+}
+renderProfiles();
+
+function handlePhotoUpload(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const data=e.target.result;
+    document.getElementById('cf-photo-data').value=data;
+    const prev=document.getElementById('cf-photo-preview');
+    prev.innerHTML=`<img src="${data}" style="width:100%;height:100%;object-fit:cover;">`;
+  };
+  reader.readAsDataURL(file);
+}
+function clearPhoto(){
+  document.getElementById('cf-photo-data').value='';
+  const emoji=document.getElementById('cf-emoji').value||'🧒';
+  document.getElementById('cf-photo-preview').innerHTML=emoji;
+}
+
+function openAddChild(){
+  document.getElementById('child-modal-title').textContent='➕ הוסף ילד חדש';
+  document.getElementById('edit-child-id').value='';
+  ['cf-name','cf-username','cf-password','cf-emoji','cf-school','cf-class','cf-color','cf-school-url','cf-photo-data'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cf-tz').value='2';
+  document.getElementById('cf-photo-preview').innerHTML='🧒';
+  document.getElementById('child-modal').classList.add('on');
+}
+function openEditChild(id){
+  const p=getProfiles().find(x=>x.id===id);if(!p)return;
+  document.getElementById('child-modal-title').textContent='✏️ ערוך פרופיל';
+  document.getElementById('edit-child-id').value=id;
+  document.getElementById('cf-name').value=p.name||'';
+  document.getElementById('cf-username').value=p.username||id;
+  document.getElementById('cf-password').value='';
+  document.getElementById('cf-emoji').value=p.avatarEmoji||'';
+  document.getElementById('cf-school').value=p.school||'';
+  document.getElementById('cf-class').value=p.className||'';
+  document.getElementById('cf-tz').value=p.tzOffset||2;
+  document.getElementById('cf-color').value=p.color||'#C8920A';
+  document.getElementById('cf-school-url').value=p.schoolUrl||'';
+  document.getElementById('cf-photo-data').value=p.photoData||'';
+  const prev=document.getElementById('cf-photo-preview');
+  prev.innerHTML=p.photoData?`<img src="${p.photoData}" style="width:100%;height:100%;object-fit:cover;">`:(p.avatarEmoji||'🧒');
+  document.getElementById('child-modal').classList.add('on');
+}
+function closeChildModal(){document.getElementById('child-modal').classList.remove('on');}
+
+async function saveChild(){
+  const editId=document.getElementById('edit-child-id').value;
+  const username=document.getElementById('cf-username').value.trim().toLowerCase().replace(/\s+/g,'');
+  if(!username||!document.getElementById('cf-name').value.trim()){showToast('⚠️ שם ושם משתמש חובה');return;}
+  const profiles=getProfiles();
+  let p=editId?profiles.find(x=>x.id===editId):null;
+  const pwRaw=document.getElementById('cf-password').value;
+  const newHash=pwRaw?await hashPassword(pwRaw):null;
+  if(!p){
+    p={id:username,username,passwordHash:newHash||'',name:'',school:'',className:'',tzOffset:2,campDate:'',campName:'',campCity:'',avatarEmoji:'🧒',color:'#C8920A',schoolUrl:''};
+    profiles.push(p);
+  }
+  p.name=document.getElementById('cf-name').value.trim();
+  p.username=username;
+  if(newHash)p.passwordHash=newHash;
+  p.avatarEmoji=document.getElementById('cf-emoji').value||'🧒';
+  p.school=document.getElementById('cf-school').value.trim();
+  p.className=document.getElementById('cf-class').value.trim();
+  p.tzOffset=parseInt(document.getElementById('cf-tz').value)||2;
+  p.color=document.getElementById('cf-color').value||'#C8920A';
+  p.schoolUrl=document.getElementById('cf-school-url').value.trim();
+  const photoData=document.getElementById('cf-photo-data').value;
+  if(photoData)p.photoData=photoData;
+  else if(!document.getElementById('cf-photo-data').value)delete p.photoData;
+  saveProfiles(profiles);closeChildModal();renderProfiles();
+  showToast('✅ פרופיל נשמר!');
+}
+function deleteChild(id){
+  if(!confirm('למחוק את הפרופיל?'))return;
+  const profiles=getProfiles().filter(p=>p.id!==id);
+  saveProfiles(profiles);renderProfiles();showToast('🗑️ נמחק');
+}
+
+// ─── ATTENDANCE TAB ───
+function renderAttendance(){
+  const profiles=getProfiles();
+  const tbody=document.getElementById('att-tbody');
+  if(!profiles.length){tbody.innerHTML='<tr><td colspan="6" style="color:#bbb;padding:20px;">אין ילדים</td></tr>';return;}
+  tbody.innerHTML=profiles.map(p=>{
+    const st=JSON.parse(localStorage.getItem('data_'+p.id)||'{}');
+    const lessons=st.lessons||{};
+    let ar=0,ot=0,fu=0,hw=0;
+    for(const id in lessons){const l=lessons[id];const a=l.att||0;if(a>=1)ar++;if(a>=2)ot++;if(a>=3)fu++;if(l.hw)hw++;}
+    const tot=ar+ot+fu+hw;
+    return`<tr>
+      <td class="att-name">${p.avatarEmoji||'🧒'} ${p.name}</td>
+      <td class="att-num">${ar}</td>
+      <td class="att-num">${ot}</td>
+      <td class="att-num">${fu}</td>
+      <td class="att-num">${hw}</td>
+      <td class="att-num" style="font-weight:900;color:var(--gold);">${tot}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── SCHEDULE TAB ───
+let currentSchedChild=null;
+function renderSchedTab(){
+  const profiles=getProfiles();
+  const sel=document.getElementById('sched-child-sel');
+  sel.innerHTML=profiles.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  if(profiles.length)loadSchedEditor();
+}
+function loadSchedEditor(){
+  const id=document.getElementById('sched-child-sel').value;
+  currentSchedChild=id;
+  const SCHED_DEFAULT=JSON.parse(localStorage.getItem('sched_'+id)||'null');
+  const editor=document.getElementById('sched-editor');
+  if(!SCHED_DEFAULT){editor.innerHTML='<p style="color:#aaa;padding:20px 0;font-size:14px;">טוען מערכת שעות... פתח קודם את האפליקציה של הילד.</p>';return;}
+  const dayNames={1:'שני',2:'שלישי',3:'רביעי',4:'חמישי',5:'שישי'};
+  editor.innerHTML=Object.entries(dayNames).map(([d,dname])=>{
+    const lessons=(SCHED_DEFAULT[d]||[]);
+    return`<div style="margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-family:'Frank Ruhl Libre',serif;font-size:16px;font-weight:700;color:var(--navy);">יום ${dname}</div>
+        <button class="btn sm primary" onclick="openAddLesson(${d})">+ שיעור</button>
+      </div>
+      <div id="day-${d}-lessons">
+        ${lessons.map((l,i)=>lessonRow(l,d,i)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+function lessonRow(l,day,idx){
+  const typeMap={prayer:'prayer',lesson:'lesson',break:'break'};
+  const tc=l.tp==='prayer'?'prayer':l.tp==='break'?'break':'lesson';
+  return`<div class="sched-lesson" data-day="${day}" data-idx="${idx}">
+    <span class="lesson-type ${tc}">${l.tp==='prayer'?'🙏':l.tp==='break'?'☕':'📖'}</span>
+    <div>
+      <div style="font-weight:700;font-size:14px;">${l.sub}</div>
+      ${l.tch?`<div style="font-size:11px;color:#aaa;">${l.tch}</div>`:''}
+    </div>
+    <div style="font-size:12px;color:#888;">${l.s}</div>
+    <div style="font-size:12px;color:#bbb;">–</div>
+    <div style="font-size:12px;color:#888;">${l.e}</div>
+    <button class="btn sm ghost" onclick="openEditLesson(${day},${idx})">✏️</button>
+    <button class="btn sm danger" onclick="deleteLesson(${day},${idx})">✕</button>
+  </div>`;
+}
+
+let editingLesson=null;
+function openAddLesson(day){
+  document.getElementById('lesson-modal-title').textContent='+ הוסף שיעור — יום '+(day===1?'שני':day===2?'שלישי':day===3?'רביעי':day===4?'חמישי':'שישי');
+  document.getElementById('lm-day').value=day;
+  document.getElementById('lm-lid').value='';
+  document.getElementById('lm-sub').value='';
+  document.getElementById('lm-tch').value='';
+  document.getElementById('lm-start').value='09:00';
+  document.getElementById('lm-end').value='09:45';
+  document.getElementById('lm-type').value='lesson';
+  editingLesson=null;
+  document.getElementById('lesson-modal').classList.add('on');
+}
+function openEditLesson(day,idx){
+  const sched=JSON.parse(localStorage.getItem('sched_'+currentSchedChild)||'{}');
+  const l=(sched[day]||[])[idx];if(!l)return;
+  document.getElementById('lesson-modal-title').textContent='✏️ ערוך שיעור';
+  document.getElementById('lm-day').value=day;
+  document.getElementById('lm-lid').value=idx;
+  document.getElementById('lm-sub').value=l.sub||'';
+  document.getElementById('lm-tch').value=l.tch||'';
+  document.getElementById('lm-start').value=l.s||'';
+  document.getElementById('lm-end').value=l.e||'';
+  document.getElementById('lm-type').value=l.tp||'lesson';
+  editingLesson=idx;
+  document.getElementById('lesson-modal').classList.add('on');
+}
+function closeLessonModal(){document.getElementById('lesson-modal').classList.remove('on');}
+function saveLesson(){
+  const day=parseInt(document.getElementById('lm-day').value);
+  const sub=document.getElementById('lm-sub').value.trim();
+  const tch=document.getElementById('lm-tch').value.trim();
+  const s=document.getElementById('lm-start').value;
+  const e=document.getElementById('lm-end').value;
+  const tp=document.getElementById('lm-type').value;
+  if(!sub){showToast('⚠️ חובה למלא שם שיעור');return;}
+  const sched=JSON.parse(localStorage.getItem('sched_'+currentSchedChild)||'{}');
+  if(!sched[day])sched[day]=[];
+  const entry={id:tp[0]+'-'+Date.now(),tp,s,e,sub};
+  if(tch)entry.tch=tch;
+  if(editingLesson!==null){sched[day][editingLesson]=entry;}
+  else{sched[day].push(entry);sched[day].sort((a,b)=>a.s.localeCompare(b.s));}
+  localStorage.setItem('sched_'+currentSchedChild,JSON.stringify(sched));
+  closeLessonModal();loadSchedEditor();showToast('✅ שיעור נשמר!');
+}
+function deleteLesson(day,idx){
+  if(!confirm('למחוק שיעור זה?'))return;
+  const sched=JSON.parse(localStorage.getItem('sched_'+currentSchedChild)||'{}');
+  if(sched[day])sched[day].splice(idx,1);
+  localStorage.setItem('sched_'+currentSchedChild,JSON.stringify(sched));
+  loadSchedEditor();showToast('🗑️ נמחק');
+}
+
+// ─── CAMP TAB ───
+function renderCampTab(){
+  const profiles=getProfiles();
+  const container=document.getElementById('camp-settings');
+  container.innerHTML=profiles.map(p=>`
+    <div class="form-box" style="margin-bottom:14px;">
+      <h3>${p.avatarEmoji||'🧒'} ${p.name}</h3>
+      <div class="form-row">
+        <div><label>שם הקאמפ</label>
+          <input type="text" id="camp-name-${p.id}" value="${p.campName||''}" placeholder="מחנה קיץ חב"ד">
+        </div>
+        <div><label>עיר</label>
+          <input type="text" id="camp-city-${p.id}" value="${p.campCity||''}" placeholder="מוסקבה">
+        </div>
+      </div>
+      <div class="form-row">
+        <div><label>תאריך הקאמפ</label>
+          <input type="date" id="camp-date-${p.id}" value="${p.campDate||''}">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="btn primary" onclick="saveCampSettings('${p.id}')">שמור</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+function saveCampSettings(id){
+  const profiles=getProfiles();
+  const p=profiles.find(x=>x.id===id);if(!p)return;
+  p.campName=document.getElementById('camp-name-'+id).value.trim();
+  p.campCity=document.getElementById('camp-city-'+id).value.trim();
+  p.campDate=document.getElementById('camp-date-'+id).value;
+  saveProfiles(profiles);showToast('✅ הגדרות קאמפ נשמרו!');
+}
+
+// ─── CLOUD TAB ───
+let SB=null;
+function initSupabase(){
+  const url=localStorage.getItem('supabase_url');
+  const key=localStorage.getItem('supabase_key');
+  if(url&&key&&typeof createClient!=='undefined'){SB=createClient(url,key);return true;}
+  return false;
+}
+function initCloudTab(){
+  const url=localStorage.getItem('supabase_url')||'';
+  const key=localStorage.getItem('supabase_key')||'';
+  document.getElementById('sb-url').value=url;
+  document.getElementById('sb-key').value=key;
+  if(url&&key){initSupabase();checkCloudStatus();}
+  else{setCloudStatus('gray','לא מוגדר — הזן URL ו-Key למטה');}
+}
+function setCloudStatus(color,txt){
+  document.getElementById('cloud-dot').style.background=color==='green'?'var(--green)':color==='red'?'var(--red)':'#bbb';
+  document.getElementById('cloud-status-txt').textContent=txt;
+}
+async function checkCloudStatus(){
+  if(!SB){setCloudStatus('gray','לא מחובר');return;}
+  try{
+    const{data:{session}}=await SB.auth.getSession();
+    if(session){
+      setCloudStatus('green','מחובר — '+session.user.email);
+      document.getElementById('sb-user-info').textContent='מחובר: '+session.user.email;
+      document.getElementById('sb-user-info').style.display='block';
+    }else{setCloudStatus('gray','מוגדר — לא מחובר לחשבון');}
+  }catch(e){setCloudStatus('red','שגיאת חיבור');}
+}
+function saveSbConfig(){
+  const url=document.getElementById('sb-url').value.trim();
+  const key=document.getElementById('sb-key').value.trim();
+  if(!url||!key){showToast('⚠️ חובה URL וKey');return;}
+  localStorage.setItem('supabase_url',url);
+  localStorage.setItem('supabase_key',key);
+  SB=null;initSupabase();checkCloudStatus();
+  showToast('✅ הגדרות ענן נשמרו!');
+}
+async function testSbConnection(){
+  if(!initSupabase()){showToast('⚠️ הזן תחילה URL ו-Key');return;}
+  try{
+    await SB.from('kv_store').select('key').limit(1);
+    setCloudStatus('green','חיבור תקין!');showToast('✅ חיבור תקין!');
+  }catch(e){setCloudStatus('red','שגיאה: '+e.message);showToast('❌ '+e.message);}
+}
+async function sbLogin(){
+  if(!SB){showToast('⚠️ שמור תחילה URL ו-Key');return;}
+  const email=document.getElementById('sb-email').value;
+  const pass=document.getElementById('sb-pass').value;
+  if(!email||!pass){showToast('⚠️ אימייל וסיסמה חובה');return;}
+  try{
+    const{data,error}=await SB.auth.signInWithPassword({email,password:pass});
+    if(error)throw error;
+    setCloudStatus('green','מחובר — '+data.user.email);
+    document.getElementById('sb-user-info').textContent='מחובר: '+data.user.email;
+    document.getElementById('sb-user-info').style.display='block';
+    showToast('✅ כניסה בוצעה!');
+  }catch(e){showToast('❌ '+e.message);}
+}
+</script>
+</body>
+</html>

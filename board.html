@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>לוח המשפחה</title>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold:#C8920A;--gold-lt:#F5D060;--gold-pale:#FDF3D0;
+  --navy:#1A2744;--navy-mid:#2C3E6B;
+  --cream:#FBF7EE;--red:#C41230;--green:#1A7A4A;
+  --border:rgba(200,146,10,0.22);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Heebo',sans-serif;background:var(--cream);color:var(--navy);direction:rtl;min-height:100vh;}
+
+.hdr{background:linear-gradient(135deg,#111e38,var(--navy-mid));color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;}
+.hdr h1{font-family:'Frank Ruhl Libre',serif;font-size:22px;font-weight:900;}
+.hdr-btn{padding:7px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;font-family:'Heebo',sans-serif;font-size:13px;cursor:pointer;}
+.hdr-btn:hover{background:rgba(255,255,255,.15);}
+
+.main{max-width:700px;margin:0 auto;padding:24px 18px;}
+
+.post-card{background:#fff;border-radius:14px;border:1.5px solid var(--border);padding:18px;margin-bottom:14px;position:relative;overflow:hidden;}
+.post-card.pinned{border-color:var(--gold);background:var(--gold-pale);}
+.post-card::before{content:attr(data-icon);font-size:32px;position:absolute;left:14px;top:14px;opacity:.18;}
+.post-type{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;margin-bottom:8px;}
+.type-ann{background:#E3F2FD;color:#1565C0;border:1px solid rgba(21,101,192,.2);}
+.type-maz{background:#FFF8E1;color:#8B6914;border:1px solid rgba(200,146,10,.2);}
+.type-kud{background:#F0FFF4;color:var(--green);border:1px solid rgba(26,122,74,.2);}
+.post-title{font-family:'Frank Ruhl Libre',serif;font-size:19px;font-weight:700;color:var(--navy);margin-bottom:6px;line-height:1.3;}
+.post-text{font-size:14px;color:#444;line-height:1.7;}
+.post-meta{font-size:11px;color:#bbb;margin-top:10px;display:flex;justify-content:space-between;align-items:center;}
+.pin-badge{font-size:10px;background:var(--gold);color:#fff;padding:2px 8px;border-radius:20px;font-weight:700;}
+.post-del{background:none;border:none;font-size:14px;cursor:pointer;color:#ddd;padding:0;}
+.post-del:hover{color:var(--red);}
+
+.fab{position:fixed;bottom:24px;left:24px;width:56px;height:56px;border-radius:50%;background:var(--navy);color:#fff;border:none;font-size:26px;cursor:pointer;box-shadow:0 4px 16px rgba(26,39,68,.3);transition:all .18s;display:none;}
+.fab:hover{background:var(--gold);transform:scale(1.07);}
+.fab.show{display:flex;align-items:center;justify-content:center;}
+
+.empty{text-align:center;padding:48px 20px;color:#bbb;}
+.empty div:first-child{font-size:48px;margin-bottom:12px;}
+
+/* modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(26,39,68,.65);z-index:500;align-items:center;justify-content:center;}
+.modal-bg.on{display:flex;}
+.mbox{background:#fff;border-radius:18px;padding:26px;max-width:460px;width:94%;box-shadow:0 18px 55px rgba(0,0,0,.28);}
+.mbox h3{font-family:'Frank Ruhl Libre',serif;font-size:19px;color:var(--navy);margin-bottom:16px;}
+label{font-size:12px;color:var(--navy-mid);display:block;margin-bottom:3px;}
+.form-row{margin-bottom:12px;}
+input[type=text],textarea,select{width:100%;border:1.5px solid #ddd;border-radius:8px;padding:9px 12px;font-family:'Heebo',sans-serif;font-size:14px;direction:rtl;color:var(--navy);}
+textarea{min-height:80px;resize:vertical;}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);}
+.type-row{display:flex;gap:8px;margin-bottom:12px;}
+.type-pick{flex:1;padding:10px 8px;border-radius:10px;border:2px solid #ddd;background:#fff;cursor:pointer;text-align:center;font-size:13px;font-weight:600;transition:all .14s;}
+.type-pick.sel{border-color:var(--navy);background:var(--navy);color:#fff;}
+.pin-toggle{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;cursor:pointer;}
+.pin-toggle input{width:auto;}
+.btn-row{display:flex;gap:8px;}
+.btn{flex:1;padding:10px;border-radius:10px;border:none;font-family:'Heebo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
+.btn.primary{background:var(--navy);color:#fff;}
+.btn.primary:hover{background:var(--gold);}
+.btn.ghost{background:transparent;color:#aaa;border:1.5px solid #ddd;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>📋 לוח המשפחה</h1>
+  <button class="hdr-btn" onclick="history.back()">← חזרה</button>
+</div>
+
+<div class="main">
+  <div id="posts-container">
+    <div class="empty"><div>📋</div><p>אין עדיין הודעות בלוח.</p></div>
+  </div>
+</div>
+
+<button class="fab" id="fab" onclick="openPost()" title="פרסם הודעה">✏️</button>
+
+<!-- Post modal -->
+<div class="modal-bg" id="post-modal">
+  <div class="mbox">
+    <h3>✏️ פרסם הודעה</h3>
+    <div class="type-row">
+      <div class="type-pick sel" data-type="announcement" onclick="pickType(this)">📢 הודעה</div>
+      <div class="type-pick" data-type="mazaltov" onclick="pickType(this)">🎉 מזל טוב</div>
+      <div class="type-pick" data-type="kudos" onclick="pickType(this)">🌟 שבח</div>
+    </div>
+    <div class="form-row">
+      <label>כותרת</label>
+      <input type="text" id="post-title" placeholder="כותרת ההודעה...">
+    </div>
+    <div class="form-row">
+      <label>תוכן (אופציונלי)</label>
+      <textarea id="post-text" placeholder="כתוב כאן..."></textarea>
+    </div>
+    <label class="pin-toggle">
+      <input type="checkbox" id="post-pin"> 📌 הצמד הודעה זו לראש הלוח
+    </label>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="closePost()">ביטול</button>
+      <button class="btn primary" onclick="savePost()">פרסם!</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── AUTH ──
+function isParent(){
+  const s=JSON.parse(localStorage.getItem('parent_session')||'null');
+  return s&&new Date(s.expires)>new Date();
+}
+function isAnyChild(){
+  const profiles=JSON.parse(localStorage.getItem('family_profiles')||'[]');
+  return profiles.some(p=>{
+    const s=JSON.parse(localStorage.getItem('session_'+p.id)||'null');
+    return s&&new Date(s.expires)>new Date();
+  });
+}
+const canPost=isParent();
+if(canPost)document.getElementById('fab').classList.add('show');
+
+// ── BOARD DATA ──
+function getPosts(){return JSON.parse(localStorage.getItem('family_board')||'[]');}
+function savePosts(p){localStorage.setItem('family_board',JSON.stringify(p));}
+
+const TYPE_META={
+  announcement:{lbl:'📢 הודעה',cls:'type-ann',icon:'📢'},
+  mazaltov:{lbl:'🎉 מזל טוב',cls:'type-maz',icon:'🎉'},
+  kudos:{lbl:'🌟 שבח',cls:'type-kud',icon:'🌟'},
+};
+
+function renderPosts(){
+  const posts=getPosts();
+  const c=document.getElementById('posts-container');
+  if(!posts.length){
+    c.innerHTML='<div class="empty"><div>📋</div><p>אין עדיין הודעות בלוח.<br>'+(canPost?'לחץ ✏️ כדי לפרסם!':'')+'</p></div>';
+    return;
+  }
+  const sorted=[...posts.filter(p=>p.pinned),...posts.filter(p=>!p.pinned).sort((a,b)=>b.created.localeCompare(a.created))];
+  c.innerHTML=sorted.map(p=>{
+    const tm=TYPE_META[p.type]||TYPE_META.announcement;
+    const d=new Date(p.created).toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'});
+    return`<div class="post-card ${p.pinned?'pinned':''}" data-icon="${tm.icon}">
+      <span class="post-type ${tm.cls}">${tm.lbl}</span>
+      ${p.pinned?'<span class="pin-badge">📌 מוצמד</span>':''}
+      <div class="post-title">${p.title}</div>
+      ${p.text?`<div class="post-text">${p.text}</div>`:''}
+      <div class="post-meta">
+        <span>${p.author||'ההורים'} · ${d}</span>
+        ${canPost?`<button class="post-del" onclick="deletePost('${p.id}')">✕</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+renderPosts();
+
+// ── POST CREATION ──
+let selectedType='announcement';
+function openPost(){
+  document.getElementById('post-title').value='';
+  document.getElementById('post-text').value='';
+  document.getElementById('post-pin').checked=false;
+  selectedType='announcement';
+  document.querySelectorAll('.type-pick').forEach(t=>{t.classList.toggle('sel',t.dataset.type==='announcement');});
+  document.getElementById('post-modal').classList.add('on');
+}
+function closePost(){document.getElementById('post-modal').classList.remove('on');}
+function pickType(el){
+  selectedType=el.dataset.type;
+  document.querySelectorAll('.type-pick').forEach(t=>t.classList.toggle('sel',t===el));
+}
+function savePost(){
+  const title=document.getElementById('post-title').value.trim();
+  if(!title){document.getElementById('post-title').focus();return;}
+  const posts=getPosts();
+  posts.push({
+    id:Date.now().toString(),
+    type:selectedType,
+    title,
+    text:document.getElementById('post-text').value.trim(),
+    pinned:document.getElementById('post-pin').checked,
+    author:'ההורים',
+    created:new Date().toISOString()
+  });
+  savePosts(posts);closePost();renderPosts();
+}
+function deletePost(id){
+  if(!confirm('למחוק הודעה זו?'))return;
+  savePosts(getPosts().filter(p=>p.id!==id));renderPosts();
+}
+</script>
+</body>
+</html>
